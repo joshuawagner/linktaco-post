@@ -83,7 +83,8 @@ enum BookmarkSearchService {
                 result.tags.joined(separator: " ")
             ]
             .joined(separator: " ")
-            .localizedCaseInsensitiveContains(query)
+
+            return haystack.localizedCaseInsensitiveContains(query)
         }
     }
 }
