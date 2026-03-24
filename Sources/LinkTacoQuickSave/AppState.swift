@@ -5,8 +5,12 @@ import SwiftUI
 @MainActor
 final class AppState: ObservableObject {
     @Published var draft = DraftBookmark(url: "", title: "", description: "", tags: "")
+    @Published var searchQuery = ""
+    @Published var searchResults: [BookmarkSearchResult] = []
     @Published var isPopupVisible = false
+    @Published var isSearching = false
     @Published var statusMessage = ""
+    @Published var searchStatusMessage = ""
 
     private let config = AppConfig.loadFromEnvironment()
 
@@ -34,7 +38,7 @@ final class AppState: ObservableObject {
     }
 
     func save() {
-        Task {
+        Task { @MainActor in
             do {
                 let result = try await BookmarkSaver.save(draft, config: config)
                 switch result {
@@ -49,6 +53,35 @@ final class AppState: ObservableObject {
                 statusMessage = "Save failed: \(error.localizedDescription). Opening browser fallback."
                 BookmarkSaver.openBrowserFallback(draft)
                 isPopupVisible = false
+            }
+        }
+    }
+
+    func runSearch() {
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else {
+            searchResults = []
+            searchStatusMessage = "Enter a search term to find bookmarks."
+            return
+        }
+
+        isSearching = true
+        searchStatusMessage = config.hasSearchAPIConfig
+            ? "Searching LinkTaco..."
+            : "Search API not configured yet. Showing local placeholder results."
+
+        Task { @MainActor in
+            defer { isSearching = false }
+
+            do {
+                let results = try await BookmarkSearchService.search(query: query, config: config)
+                searchResults = results
+                searchStatusMessage = results.isEmpty
+                    ? "No bookmarks matched \"\(query)\"."
+                    : "Found \(results.count) bookmark\(results.count == 1 ? "" : "s")."
+            } catch {
+                searchResults = []
+                searchStatusMessage = "Search failed: \(error.localizedDescription)"
             }
         }
     }
