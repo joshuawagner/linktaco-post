@@ -1,8 +1,16 @@
 import SwiftUI
 
+private enum AppSection: String, CaseIterable, Identifiable {
+    case quickSave = "Quick Save"
+    case search = "Search"
+
+    var id: String { rawValue }
+}
+
 @main
 struct LinkTacoQuickSaveApp: App {
     @StateObject private var appState = AppState()
+    @State private var selectedSection: AppSection = .quickSave
     private let monitor: HotkeyMonitor
 
     init() {
@@ -28,20 +36,36 @@ struct LinkTacoQuickSaveApp: App {
             if appState.isPopupVisible {
                 PopupView(appState: appState)
             } else {
-                VStack(spacing: 8) {
-                    Text("LinkTaco Quick Save")
-                        .font(.headline)
-                    Text("Use ⌘⌥⇧G in Chrome to capture the active tab.")
-                        .foregroundStyle(.secondary)
-                    if !appState.statusMessage.isEmpty {
-                        Text(appState.statusMessage)
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                VStack(alignment: .leading, spacing: 12) {
+                    Picker("Section", selection: $selectedSection) {
+                        ForEach(AppSection.allCases) { section in
+                            Text(section.rawValue).tag(section)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    switch selectedSection {
+                    case .quickSave:
+                        VStack(spacing: 8) {
+                            Text("LinkTaco Quick Save")
+                                .font(.headline)
+                            Text("Use ⌘⌥⇧H in Chrome to capture the active tab.")
+                                .foregroundStyle(.secondary)
+                            if !appState.statusMessage.isEmpty {
+                                Text(appState.statusMessage)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    case .search:
+                        SearchView(appState: appState)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 }
                 .padding(20)
-                .frame(width: 420, height: 120)
+                .frame(width: 760, height: 480)
             }
         }
         .windowResizability(.contentSize)

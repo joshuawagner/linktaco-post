@@ -47,7 +47,6 @@ final class HotkeyMonitor {
                 if eventHotKeyID.id == 1,
                    let userData {
                     let monitor = Unmanaged<HotkeyMonitor>.fromOpaque(userData).takeUnretainedValue()
-                    print("HOTKEY FIRED")
                     monitor.callback()
                 }
                 return noErr
@@ -62,7 +61,7 @@ final class HotkeyMonitor {
         }
 
         let registerStatus = RegisterEventHotKey(
-            UInt32(kVK_ANSI_G),
+            UInt32(kVK_ANSI_H),
             UInt32(cmdKey | optionKey | shiftKey),
             hotKeyID,
             GetApplicationEventTarget(),
