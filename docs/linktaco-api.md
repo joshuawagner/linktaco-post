@@ -155,8 +155,10 @@ Debug mode may log request/response metadata, but must avoid sensitive leakage.
 - Redact full `Authorization` header.
 - Do not log PAT in any form.
 - Log GraphQL query and variables with sensitive values stripped.
-- Truncate long response bodies (e.g., 4 KB max).
-- Include per-request correlation ID in logs.
+- Optionally hash or truncate URL query strings in logs.
+- Truncate/cap long response bodies (e.g., 4 KB max).
+- Include per-save-attempt correlation ID in logs.
+- Disable verbose payload logs by default; only emit when explicit debug toggle is enabled.
 - Log path used: `api_success`, `api_failed_fallback_offered`, or `fallback_used`.
 
 ## Browser Fallback Contract (`/add`)

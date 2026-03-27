@@ -34,6 +34,8 @@
 - Debug mode is opt-in
 - Never log PAT
 - Redact sensitive request metadata
+- Adopt the **Debug Logging Safety** policy defined in [`docs/linktaco-api.md`](./linktaco-api.md#debug-logging-safety) for API save-path logging
+- Treat log safety requirements as a non-optional baseline for networking and observability changes
 
 ## Future
 - Search feature planned

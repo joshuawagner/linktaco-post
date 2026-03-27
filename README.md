@@ -51,11 +51,15 @@ Grant:
 4. If issues: copy logs → fix
 
 ## Debugging
-Enable debug mode in settings to log:
-- GraphQL operation and variables (safely redacted)
-- HTTP status
-- Response body (truncated)
-- Save path (`api_success`, `api_failed_fallback_offered`, `fallback_used`)
+Enable debug mode in settings for API save-path diagnostics, and follow the
+**Debug Logging Safety** policy in
+[`docs/linktaco-api.md`](docs/linktaco-api.md#debug-logging-safety).
+
+When debug logging is enabled:
+- GraphQL operation and variables may be logged only with sensitive values redacted
+- HTTP status may be logged
+- Response bodies must be truncated/capped
+- Save path should be logged (`api_success`, `api_failed_fallback_offered`, `fallback_used`)
 
 ## Notes
 - GraphQL playground uses production data—be careful testing
