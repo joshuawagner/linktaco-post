@@ -23,6 +23,8 @@
 ## Fallback
 - Keep `/add` browser fallback
 - Trigger fallback when API is unavailable, errors, or token is missing
+- Fallback URL contract is client-defined (base path, param order, encoding, truncation, org override handling)
+- `/add` UI outcomes in docs are treated as expected current behavior, not hard undocumented server guarantees
 
 ## Reliability
 - Deterministic save policy: no auto-retry in MVP

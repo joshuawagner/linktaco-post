@@ -160,7 +160,8 @@ Debug mode may log request/response metadata, but must avoid sensitive leakage.
 - Log path used: `api_success`, `api_failed_fallback_offered`, or `fallback_used`.
 
 ## Browser Fallback Contract (`/add`)
-When API save is unavailable, clients MUST open a browser URL against LinkTaco's add page using the following contract.
+When API save is unavailable, clients MUST open a browser URL against LinkTaco's add page using the following client-side contract.
+This section defines what the desktop app sends; it does not assert undocumented server-side guarantees beyond observed current behavior.
 
 ### Endpoint and query shape
 
@@ -203,7 +204,7 @@ Apply limits **before** query encoding:
 - `tags`: max **500** characters total (comma-separated form)
 - `org`: max **64** characters
 
-If a field exceeds its maximum length, truncate to max length, then encode.
+If a field exceeds its maximum length, the client truncates to max length, then encodes.
 
 Additional tag normalization before the 500-character total limit check:
 
@@ -215,11 +216,12 @@ Additional tag normalization before the 500-character total limit check:
 ### Org override behavior
 
 The LinkTaco UI has a user default org context.
+Client requirement: include `org` when user-selected org override differs from default org; otherwise omit it.
 
 - If `org` is **omitted**, `/add` uses the authenticated user's default org.
 - If `org` is provided and **matches** the current default org, `/add` behaves identically to omission.
-- If `org` is provided and **differs** from the default org, `/add` MUST preselect the provided org as the save target for this add flow.
-- If `org` is invalid or inaccessible to the user, `/add` falls back to default org and should surface a non-blocking UI notice.
+- If `org` is provided and **differs** from the default org, current UI behavior is expected to preselect the provided org for this add flow.
+- If `org` is invalid or inaccessible to the user, current UI behavior is expected to use default org (and may surface a non-blocking notice).
 
 ### Concrete example (encoded)
 
