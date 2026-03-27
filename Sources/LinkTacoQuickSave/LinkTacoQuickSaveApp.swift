@@ -46,19 +46,8 @@ struct LinkTacoQuickSaveApp: App {
 
                     switch selectedSection {
                     case .quickSave:
-                        VStack(spacing: 8) {
-                            Text("LinkTaco Quick Save")
-                                .font(.headline)
-                            Text("Use ⌘⌥⇧H in Chrome to capture the active tab.")
-                                .foregroundStyle(.secondary)
-                            if !appState.statusMessage.isEmpty {
-                                Text(appState.statusMessage)
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        QuickSaveHomeView(appState: appState)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     case .search:
                         SearchView(appState: appState)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,5 +58,91 @@ struct LinkTacoQuickSaveApp: App {
             }
         }
         .windowResizability(.contentSize)
+    }
+}
+
+private struct QuickSaveHomeView: View {
+    @ObservedObject var appState: AppState
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("LinkTaco Quick Save")
+                        .font(.headline)
+                    Text("Use ⌘⌥⇧H in Chrome to capture the active tab.")
+                        .foregroundStyle(.secondary)
+                }
+
+                GroupBox("PAT") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SecureField("Personal Access Token", text: $appState.tokenInput)
+                            .textFieldStyle(.roundedBorder)
+
+                        HStack(spacing: 10) {
+                            Button("Save PAT") {
+                                appState.savePAT()
+                            }
+
+                            Button("Refresh Orgs") {
+                                appState.refreshOrganizationsManually()
+                            }
+                            .disabled(!appState.hasSavedPAT || appState.isRefreshingOrganizations)
+
+                            Button("Clear PAT") {
+                                appState.clearPAT()
+                            }
+                            .disabled(!appState.hasSavedPAT && appState.tokenInput.isEmpty)
+
+                            Spacer()
+                        }
+
+                        Text("Required scopes: LINKS:RW and ORGS:RO.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 4)
+                }
+
+                GroupBox("Organization") {
+                    VStack(alignment: .leading, spacing: 10) {
+                        if appState.isRefreshingOrganizations {
+                            ProgressView("Refreshing organizations...")
+                                .controlSize(.small)
+                        }
+
+                        Picker("Selected Organization", selection: $appState.selectedOrganizationSlug) {
+                            Text("Select organization").tag("")
+                            ForEach(appState.activeOrganizations) { organization in
+                                Text(organization.name).tag(organization.slug)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .disabled(appState.activeOrganizations.isEmpty)
+                        .onChange(of: appState.selectedOrganizationSlug) { newValue in
+                            appState.handleSelectedOrganizationChange(newValue)
+                        }
+
+                        Text(appState.organizationPickerHint)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 4)
+                }
+
+                if !appState.configurationStatusMessage.isEmpty {
+                    Text(appState.configurationStatusMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+
+                if !appState.statusMessage.isEmpty {
+                    Text(appState.statusMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 }

@@ -15,10 +15,18 @@ struct BookmarkSearchResult: Identifiable {
     var tags: [String]
 }
 
+struct Organization: Identifiable, Codable, Hashable {
+    let id: String
+    let name: String
+    let slug: String
+    let isActive: Bool
+}
+
 struct AppConfig {
     var createBookmarkEndpoint: URL?
     var searchBookmarksEndpoint: URL?
     var bearerToken: String?
+    let graphqlEndpoint = URL(string: "https://api.linktaco.com/query")!
 
     static func loadFromEnvironment() -> AppConfig {
         let env = ProcessInfo.processInfo.environment
@@ -38,5 +46,11 @@ struct AppConfig {
 
     var hasSearchAPIConfig: Bool {
         searchBookmarksEndpoint != nil && !(bearerToken?.isEmpty ?? true)
+    }
+}
+
+extension String {
+    var trimmedForAppUse: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

@@ -19,6 +19,28 @@ struct PopupView: View {
 
             TextField("Tags (comma-separated)", text: $appState.draft.tags)
 
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Organization")
+                    .font(.subheadline)
+
+                Picker("Organization", selection: $appState.selectedOrganizationSlug) {
+                    Text("Select organization").tag("")
+                    ForEach(appState.activeOrganizations) { organization in
+                        Text(organization.name).tag(organization.slug)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .disabled(appState.activeOrganizations.isEmpty)
+                .onChange(of: appState.selectedOrganizationSlug) { newValue in
+                    appState.handleSelectedOrganizationChange(newValue)
+                }
+
+                Text(appState.organizationPickerHint)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             if !appState.statusMessage.isEmpty {
                 Text(appState.statusMessage)
                     .font(.footnote)
@@ -37,6 +59,6 @@ struct PopupView: View {
             }
         }
         .padding(16)
-        .frame(width: 520, height: 340)
+        .frame(width: 520, height: 420)
     }
 }

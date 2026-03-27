@@ -18,12 +18,17 @@ This repo currently contains a working macOS SwiftUI prototype, not the full MVP
 - Central SwiftUI `ObservableObject`
 - Controls popup visibility and basic status text
 - Holds the current draft in memory
-- Loads API-related configuration from environment variables
+- Manages PAT input, Keychain-backed token loading, organization cache, and selected org persistence
+- Still reads prototype endpoint overrides from environment variables
 
 ### PopupView
 - Basic save form for URL, title, description, and tags
+- Includes an active-organization picker
 - Closes the popup after save
 - Shows a single status message
+
+### Quick Save Home
+- Provides in-app PAT entry, Keychain save/clear actions, org refresh, and organization selection
 
 ### BookmarkSaver
 - Sends a simple request to a configured endpoint
@@ -38,11 +43,12 @@ Hotkey → ChromeClient → AppState → PopupView → prototype save path or br
 
 ## Current Implementation Notes
 - Selected text capture is not implemented yet.
-- PAT storage is not implemented yet.
-- Org selection is not implemented yet.
+- PAT storage is implemented in Keychain.
+- Org fetch, caching, and selection are implemented as foundation work.
 - GraphQL save is not implemented yet.
 - Debug logging toggles are not implemented yet.
 - Search is prototype-only and is not wired to a documented LinkTaco API contract yet.
+- The prototype save path does not yet require or submit the selected org; that happens in the planned GraphQL save flow.
 
 ## Target MVP Architecture
 

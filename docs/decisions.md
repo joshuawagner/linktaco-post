@@ -46,6 +46,9 @@
 - Adopt the **Debug Logging Safety** policy defined in [`docs/linktaco-api.md`](./linktaco-api.md#debug-logging-safety) for API save-path logging
 - Treat log safety requirements as a non-optional baseline for networking and observability changes
 
+## Assumptions
+- 2026-03-27: PAT storage and organization-selection foundation may land before the GraphQL save path. Until `addLink` is implemented, the prototype save flow may continue using the configured prototype endpoint/browser fallback and does not yet require or transmit the selected org.
+
 ## Future
 - Search feature planned
 - Keep architecture modular for GraphQL search UI later
@@ -53,3 +56,4 @@
 ## Documentation
 - 2026-03-27: Expanded `docs/architecture.md` interface contracts to include method signatures, model I/O expectations, explicit error surfaces, and a protocol-to-concrete implementation mapping table.
 - 2026-03-27: Reconciled `README.md`, `docs/architecture.md`, and `NEXT_STEPS.md` so they describe the current prototype honestly while preserving the agreed MVP target.
+- 2026-03-27: Updated docs after implementing the PAT, Keychain, and organization-selection foundation in the current prototype.
