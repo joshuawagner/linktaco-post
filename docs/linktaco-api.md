@@ -160,20 +160,74 @@ Debug mode may log request/response metadata, but must avoid sensitive leakage.
 - Log path used: `api_success`, `api_failed_fallback_offered`, or `fallback_used`.
 
 ## Browser Fallback Contract (`/add`)
-When API is unavailable or fails, construct browser fallback URL using percent-encoding for each field.
+When API save is unavailable, clients MUST open a browser URL against LinkTaco's add page using the following contract.
 
-- Base: `/add`
-- Suggested params:
-  - `url`
-  - `title`
-  - `description`
-  - `tags`
-  - `org` (optional)
+### Endpoint and query shape
 
-### Example
+- **Method:** `GET`
+- **Base URL:** `https://linktaco.com/add`
+- **Required query params (in this order for deterministic generation):**
+  1. `next=same`
+  2. `url=<encoded source URL>`
+  3. `description=<encoded description>`
+  4. `title=<encoded title>`
+- **Optional query params:**
+  - `tags=<encoded tags>`
+  - `org=<encoded org override>`
+
+If `tags` is empty, omit `tags`. If `org` is empty, omit `org`.
+
+### Encoding rules
+
+All fallback values MUST be UTF-8 encoded and URL query encoded (RFC 3986 semantics for query values).
+
+- `url`: Full absolute URL string of the source page.
+- `title`: Human-readable bookmark title.
+- `description`: Free-text notes/selection.
+- `tags`: Comma-separated tag list (for example: `swift,macos,bookmarking`) encoded as a single query value.
+- `org`: Organization slug (for example: `acme-dev`) encoded as a single query value.
+
+Encoding requirements:
+
+- Percent-encode reserved characters such as space (`%20`), comma (`%2C`), ampersand (`%26`), and plus (`%2B`) in query values.
+- Do not double-encode values.
+- Preserve Unicode characters via UTF-8 percent encoding.
+
+### Maximum lengths and truncation behavior
+
+Apply limits **before** query encoding:
+
+- `url`: max **2048** characters
+- `title`: max **300** characters
+- `description`: max **2000** characters
+- `tags`: max **500** characters total (comma-separated form)
+- `org`: max **64** characters
+
+If a field exceeds its maximum length, truncate to max length, then encode.
+
+Additional tag normalization before the 500-character total limit check:
+
+1. Split on commas.
+2. Trim whitespace around each tag.
+3. Remove empty tags.
+4. Re-join with `,`.
+
+### Org override behavior
+
+The LinkTaco UI has a user default org context.
+
+- If `org` is **omitted**, `/add` uses the authenticated user's default org.
+- If `org` is provided and **matches** the current default org, `/add` behaves identically to omission.
+- If `org` is provided and **differs** from the default org, `/add` MUST preselect the provided org as the save target for this add flow.
+- If `org` is invalid or inaccessible to the user, `/add` falls back to default org and should surface a non-blocking UI notice.
+
+### Concrete example (encoded)
+
 ```text
-https://linktaco.com/add?url=https%3A%2F%2Fexample.com&title=Example%20title&description=Optional%20description&tags=tag1%2Ctag2&org=my-org
+https://linktaco.com/add?next=same&url=https%3A%2F%2Fexample.com%2Fpost%3Fa%3D1%26b%3D2&description=Deep%20dive%20on%20Swift%20concurrency%20%26%20actors&title=Swift%20Concurrency%20Guide&tags=swift%2Cmacos%2Casync-await&org=engineering-core
 ```
+
+This example is intended as an implementation verification fixture for fallback URL construction.
 
 ## Known Unknowns
 - Rate limits
