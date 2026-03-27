@@ -30,34 +30,83 @@
 Define protocol contracts so implementations can be swapped and tested.
 
 ### `HotkeyMonitoring`
-- `start(handler: @escaping () -> Void)`
-- `stop()`
+- Primary methods:
+  - `start(handler: @escaping () -> Void) throws`
+  - `stop()`
+- Input/Output:
+  - Input: callback closure for hotkey activation
+  - Output: none (callback-driven behavior)
+- Error surface:
+  - `HotkeyMonitoringError.registrationFailed`
+  - `HotkeyMonitoringError.permissionDenied`
 
 ### `BrowserTabCapturing`
-- `captureActiveTab() async throws -> CapturedTab`
-- `captureSelectedText(timeout: TimeInterval) async -> String?`
+- Primary methods:
+  - `captureActiveTab() async throws -> CapturedTab`
+  - `captureSelectedText(timeout: TimeInterval) async -> String?`
+- Input/Output:
+  - Input: optional selected-text timeout (`TimeInterval`)
+  - Output: `CapturedTab` (`url: URL`, `title: String`, optional `selectedText`)
+- Error surface:
+  - `BrowserTabCapturingError.noSupportedBrowser` (non-Chrome active browser)
+  - `BrowserTabCapturingError.scriptExecutionFailed`
+  - `BrowserTabCapturingError.noActiveTab`
 
 ### `BookmarkSaving`
-- `save(input: BookmarkDraft, token: String) async -> SaveResult`
+- Primary methods:
+  - `save(input: BookmarkDraft, token: String) async -> SaveResult`
+- Input/Output:
+  - Input: `BookmarkDraft` (`url`, `title`, `description`, `tags`, `orgSlug?`), PAT token
+  - Output: `SaveResult` (`success`, `errorMessage`, optional server metadata)
+- Error surface:
+  - `SaveResult.failure(.unauthorized)`
+  - `SaveResult.failure(.networkFailure)`
+  - `SaveResult.failure(.graphqlError)`
+  - `SaveResult.failure(.invalidResponse)`
 
 ### `OrganizationProviding`
-- `fetchOrganizations(token: String) async throws -> [Organization]`
+- Primary methods:
+  - `fetchOrganizations(token: String) async throws -> [Organization]`
+- Input/Output:
+  - Input: PAT token
+  - Output: `[Organization]` (with `slug`, `name`, `isActive`)
+- Error surface:
+  - `OrganizationProvidingError.unauthorized`
+  - `OrganizationProvidingError.networkFailure`
+  - `OrganizationProvidingError.decodingFailure`
 
 ### `TokenStoring`
-- `save(token: String) throws`
-- `loadToken() throws -> String?`
-- `clearToken() throws`
+- Primary methods:
+  - `save(token: String) throws`
+  - `loadToken() throws -> String?`
+  - `clearToken() throws`
+- Input/Output:
+  - Input: PAT token string for save
+  - Output: optional PAT token for load
+- Error surface:
+  - `TokenStoringError.writeFailed`
+  - `TokenStoringError.readFailed`
+  - `TokenStoringError.deleteFailed`
 
 ### `FallbackSaving`
-- `openAddURL(from draft: BookmarkDraft) throws`
+- Primary methods:
+  - `openAddURL(from draft: BookmarkDraft) throws`
+- Input/Output:
+  - Input: `BookmarkDraft`
+  - Output: none (attempt to open fallback URL)
+- Error surface:
+  - `FallbackSavingError.invalidURL`
+  - `FallbackSavingError.openFailed`
 
-## Concrete Implementations (MVP)
-- `CarbonHotkeyMonitor` (or equivalent global hotkey implementation) → `HotkeyMonitoring`
-- `AppleScriptChromeClient` → `BrowserTabCapturing`
-- `GraphQLBookmarkSaver` (URLSession) → `BookmarkSaving`
-- `GraphQLOrganizationProvider` (URLSession) → `OrganizationProviding`
-- `KeychainTokenStore` → `TokenStoring`
-- `BrowserAddFallbackSaver` (NSWorkspace open URL) → `FallbackSaving`
+## Protocol to Implementation (MVP)
+| Protocol | Concrete implementation |
+| --- | --- |
+| `HotkeyMonitoring` | `CarbonHotkeyMonitor` (or equivalent global hotkey implementation) |
+| `BrowserTabCapturing` | `AppleScriptChromeClient` (Chrome-only) |
+| `BookmarkSaving` | `URLSessionBookmarkSaver` (GraphQL) |
+| `OrganizationProviding` | `URLSessionOrganizationProvider` (GraphQL) |
+| `TokenStoring` | `KeychainTokenStore` |
+| `FallbackSaving` | `BrowserAddFallbackSaver` (NSWorkspace open URL) |
 
 ## Flow
 Hotkey → ChromeClient → AppState → PopupView → BookmarkSaver → API or fallback

@@ -49,3 +49,6 @@
 ## Future
 - Search feature planned
 - Keep architecture modular for GraphQL search UI later
+
+## Documentation
+- 2026-03-27: Expanded `docs/architecture.md` interface contracts to include method signatures, model I/O expectations, explicit error surfaces, and a protocol-to-concrete implementation mapping table.
