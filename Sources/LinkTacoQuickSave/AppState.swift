@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import OSLog
 import SwiftUI
 
 @MainActor
@@ -20,6 +21,7 @@ final class AppState: ObservableObject {
     @Published var statusMessage = ""
     @Published var searchStatusMessage = ""
     @Published var configurationStatusMessage = ""
+    @Published private(set) var activeCaptureID = UUID().uuidString
 
     private let config = AppConfig.loadFromEnvironment()
     private let tokenStore = KeychainTokenStore()
@@ -101,7 +103,16 @@ final class AppState: ObservableObject {
         activeOrganizations.first { $0.slug == selectedOrganizationSlug }
     }
 
+    var isDebugLoggingEnabled: Bool {
+        config.debugLoggingEnabled
+    }
+
     func captureFromChromeAndShowPopup() {
+        activeCaptureID = UUID().uuidString
+        logDebug(
+            "capture_started id=\(activeCaptureID) popupVisible=\(isPopupVisible)"
+        )
+
         do {
             let tab = try ChromeClient.getActiveTab()
             draft = DraftBookmark(
@@ -112,10 +123,16 @@ final class AppState: ObservableObject {
             )
             statusMessage = ""
             isPopupVisible = true
+            logDebug(
+                "capture_succeeded id=\(activeCaptureID) titleLength=\(draft.title.count) descriptionLength=\(draft.description.count)"
+            )
             presentAppWindow()
         } catch {
             statusMessage = "Could not read active Chrome tab: \(error.localizedDescription)"
             isPopupVisible = true
+            logDebug(
+                "capture_failed id=\(activeCaptureID) error=\(String(describing: error))"
+            )
             presentAppWindow()
         }
     }
@@ -162,6 +179,10 @@ final class AppState: ObservableObject {
     }
 
     func handleSelectedOrganizationChange(_ slug: String) {
+        logDebug(
+            "org_selection_changed id=\(activeCaptureID) hasSelection=\(!slug.isEmpty)"
+        )
+
         guard !slug.isEmpty else {
             configurationStatusMessage = "Select an active organization before the GraphQL save path is enabled."
             return
@@ -176,6 +197,10 @@ final class AppState: ObservableObject {
     }
 
     func save() {
+        logDebug(
+            "save_tapped id=\(activeCaptureID) popupVisible=\(isPopupVisible) hasOrgSelection=\(!selectedOrganizationSlug.isEmpty)"
+        )
+
         Task { @MainActor in
             do {
                 let result = try await BookmarkSaver.save(draft, config: resolvedAppConfig())
@@ -184,13 +209,19 @@ final class AppState: ObservableObject {
                     statusMessage = "Saved in background."
                 case .fallbackRequired(let reason):
                     statusMessage = "API not configured (\(reason)). Opening browser fallback."
-                    BookmarkSaver.openBrowserFallback(draft)
+                    BookmarkSaver.openBrowserFallback(draft, orgSlug: selectedOrganizationSlug)
                 }
                 isPopupVisible = false
+                logDebug(
+                    "save_completed id=\(activeCaptureID) path=api_success popupVisible=\(isPopupVisible)"
+                )
             } catch {
                 statusMessage = "Save failed: \(error.localizedDescription). Opening browser fallback."
-                BookmarkSaver.openBrowserFallback(draft)
+                BookmarkSaver.openBrowserFallback(draft, orgSlug: selectedOrganizationSlug)
                 isPopupVisible = false
+                logDebug(
+                    "save_completed id=\(activeCaptureID) path=fallback_used popupVisible=\(isPopupVisible)"
+                )
             }
         }
     }
@@ -228,7 +259,8 @@ final class AppState: ObservableObject {
         AppConfig(
             createBookmarkEndpoint: config.createBookmarkEndpoint,
             searchBookmarksEndpoint: config.searchBookmarksEndpoint,
-            bearerToken: savedBearerToken.isEmpty ? nil : savedBearerToken
+            bearerToken: savedBearerToken.isEmpty ? nil : savedBearerToken,
+            debugLoggingEnabled: config.debugLoggingEnabled
         )
     }
 
@@ -327,6 +359,9 @@ final class AppState: ObservableObject {
     }
 
     private func presentAppWindow() {
+        logDebug(
+            "present_window id=\(activeCaptureID) windowCount=\(NSApp.windows.count)"
+        )
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
@@ -338,5 +373,13 @@ final class AppState: ObservableObject {
                 window.orderFrontRegardless()
             }
         }
+    }
+
+    private func logDebug(_ message: String) {
+        guard config.debugLoggingEnabled else {
+            return
+        }
+
+        AppLogger.logger.debug("\(message, privacy: .public)")
     }
 }

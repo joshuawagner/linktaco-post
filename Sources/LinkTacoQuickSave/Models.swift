@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 struct DraftBookmark {
     var url: String
@@ -26,6 +27,7 @@ struct AppConfig {
     var createBookmarkEndpoint: URL?
     var searchBookmarksEndpoint: URL?
     var bearerToken: String?
+    var debugLoggingEnabled: Bool
     let graphqlEndpoint = URL(string: "https://api.linktaco.com/query")!
 
     static func loadFromEnvironment() -> AppConfig {
@@ -33,10 +35,12 @@ struct AppConfig {
         let endpoint = env["LINKTACO_CREATE_ENDPOINT"].flatMap(URL.init(string:))
         let searchEndpoint = env["LINKTACO_SEARCH_ENDPOINT"].flatMap(URL.init(string:))
         let token = env["LINKTACO_BEARER_TOKEN"]
+        let debugLoggingEnabled = env["LINKTACO_DEBUG_LOGS"] == "1"
         return AppConfig(
             createBookmarkEndpoint: endpoint,
             searchBookmarksEndpoint: searchEndpoint,
-            bearerToken: token
+            bearerToken: token,
+            debugLoggingEnabled: debugLoggingEnabled
         )
     }
 
@@ -47,6 +51,10 @@ struct AppConfig {
     var hasSearchAPIConfig: Bool {
         searchBookmarksEndpoint != nil && !(bearerToken?.isEmpty ?? true)
     }
+}
+
+enum AppLogger {
+    static let logger = Logger(subsystem: "com.linktaco.LinkTacoQuickSave", category: "app")
 }
 
 extension String {

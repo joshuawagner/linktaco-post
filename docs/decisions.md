@@ -45,6 +45,9 @@
 - Redact sensitive request metadata
 - Adopt the **Debug Logging Safety** policy defined in [`docs/linktaco-api.md`](./linktaco-api.md#debug-logging-safety) for API save-path logging
 - Treat log safety requirements as a non-optional baseline for networking and observability changes
+- 2026-03-27: Added opt-in popup lifecycle diagnostics behind `LINKTACO_DEBUG_LOGS=1` to trace capture, popup presentation, description editing, org selection, and save/fallback flow without logging PATs or raw bookmark contents
+- 2026-03-27: Replaced the popup description `TextEditor` with an AppKit-backed `NSTextView` wrapper as an experiment after correlating `TUINSRemoteViewController` faults with description-field focus teardown
+- 2026-03-27: Replaced popup URL, title, and tags `TextField`s with AppKit-backed `NSTextField` wrappers after remaining `TUINSRemoteViewController` faults appeared during field-to-field focus transitions
 
 ## Assumptions
 - 2026-03-27: PAT storage and organization-selection foundation may land before the GraphQL save path. Until `addLink` is implemented, the prototype save flow may continue using the configured prototype endpoint/browser fallback and does not yet require or transmit the selected org.
@@ -57,3 +60,4 @@
 - 2026-03-27: Expanded `docs/architecture.md` interface contracts to include method signatures, model I/O expectations, explicit error surfaces, and a protocol-to-concrete implementation mapping table.
 - 2026-03-27: Reconciled `README.md`, `docs/architecture.md`, and `NEXT_STEPS.md` so they describe the current prototype honestly while preserving the agreed MVP target.
 - 2026-03-27: Updated docs after implementing the PAT, Keychain, and organization-selection foundation in the current prototype.
+- 2026-03-27: Aligned the browser fallback URL builder with the documented `/add` contract by forwarding normalized `tags` and the selected `org` slug from the popup save flow.
