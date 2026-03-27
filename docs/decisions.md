@@ -22,12 +22,18 @@
 - Tags editable
 - Org selectable
 - Inline save errors before fallback
+- Organization list refreshes on app launch, settings open, and explicit manual refresh
+- Cache org list with a TTL of 5 minutes
+- If stored `orgSlug` is missing from `getOrganizations`, clear invalid selection, force org picker, and block save until a valid active org is selected
+- If org list is empty (or all returned orgs are inactive), block save and show actionable guidance to refresh or update account access
+- Inactive orgs are never valid save targets and must not be auto-selected
 
 ## Fallback
 - Keep `/add` browser fallback
 - Trigger fallback when API is unavailable, errors, or token is missing
 - Fallback URL contract is client-defined (base path, param order, encoding, truncation, org override handling)
 - `/add` UI outcomes in docs are treated as expected current behavior, not hard undocumented server guarantees
+- Org-selection problems (missing/invalid/inactive/empty org set) are handled in-app first (forced picker + blocked save), not by silently bypassing to fallback
 
 ## Reliability
 - Deterministic save policy: no auto-retry in MVP

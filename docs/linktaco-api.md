@@ -116,12 +116,28 @@ query GetOrganizations($input: GetOrganizationsInput) {
 }
 ```
 
-### Caching Rules
-- Fetch after PAT entry/update.
-- Fetch on explicit manual refresh.
-- Cache org list for current app session.
+### Refresh Triggers
+- Refresh on app launch.
+- Refresh when settings are opened.
+- Refresh after PAT entry/update.
+- Refresh on explicit manual refresh.
+
+### Cache and Selection Rules
+- Cache org list with a TTL of 5 minutes.
 - Persist selected `orgSlug` in UserDefaults.
-- If persisted slug is not returned by `getOrganizations`, block save and require a new selection.
+- If cache is older than TTL at a save boundary, refresh before allowing save.
+- If persisted `orgSlug` is not returned by `getOrganizations`, clear it, force org picker, and block save until user selects a valid active org.
+- If selected org is returned with `isActive=false`, treat it as invalid for save, require reselection, and block save.
+
+### Empty/Inactive Organization Handling
+- If `getOrganizations` returns an empty list, disable save and present an actionable message (refresh or verify account/org access).
+- If organizations are returned but none are active, disable save and present the same actionable guidance.
+- Never auto-select an inactive org.
+
+### UX Fallback Policy for Org Issues
+- Org selection issues are handled in the popup UX first.
+- Default behavior for missing/invalid/inactive org selection is: force picker + block save.
+- Do not silently redirect org-selection problems to browser fallback.
 
 ## Search (Future)
 - `getOrgLinks`
