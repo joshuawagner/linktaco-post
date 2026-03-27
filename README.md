@@ -1,46 +1,62 @@
-# LinkTaco Quick Save (macOS)
+# LinkTacoQuickSave
 
-A tiny local macOS app prototype for quickly saving bookmarks to LinkTaco with a global hotkey.
+A macOS utility to quickly save bookmarks to LinkTaco using a global hotkey.
 
-## What this prototype includes
+## Features (MVP)
+- Global hotkey: ⌘⇧⌥H (Command+Shift+Option+H)
+- Capture active Chrome tab (URL + title)
+- Optional selected-text capture (best effort)
+- Popup editor before save
+- Edit URL, title, description, tags
+- Select organization (default + per-save override)
+- Background save via LinkTaco GraphQL API
+- Browser fallback (`/add`) if API fails or token is unavailable
 
-- Global hotkey: `⌘⌥⇧H`
-- Reads active Google Chrome tab metadata (URL + title)
-- Opens a popup editor where you can:
-  - modify title
-  - modify description
-  - add tags
-- Attempts background save via API (when configured)
-- Fallback behavior if API is not configured
-- Search tab scaffold for future bookmark lookup
+## Setup
 
-## Why API details are needed
+### 1. Requirements
+- macOS 13+
+- Xcode 15+
+- Chrome (MVP browser integration)
 
-Your current bookmarklet works by redirecting the browser to LinkTaco's `/add` URL while authenticated.
-For true **background saving** without opening a visible browser tab, this app needs a proper API endpoint and auth mechanism.
+### 2. Run
+Open `Package.swift` in Xcode and press Run.
 
-Without API details, the app can still prefill data and prepare payloads, but final save must use a browser redirect.
+### 3. Permissions
+Grant:
+- Accessibility (global hotkey)
+- Automation (Chrome tab access)
 
-The search view is also wired for a future API integration. Until the search endpoint is configured, it shows placeholder local results so the UI flow can be developed now.
+### 4. Configure Token
+- Generate a Personal Access Token (PAT) from LinkTaco
+- Required scopes:
+  - LINKS:RW
+  - ORGS:RO
+- Paste token into app settings (stored in Keychain)
 
-## Build notes
+### 5. First Run
+- App fetches organizations after PAT is saved
+- Select default organization
+- Save popup always allows org override
 
-This repository is designed for building on macOS with Xcode 15+.
+## Save Behavior
+- API save is primary path
+- Save is considered failed on transport error, timeout, GraphQL `errors`, or missing `data.addLink`
+- On failure, app surfaces inline error and offers browser fallback
 
-```bash
-swift build
-```
+## Development Loop
+1. Modify code
+2. ⌘R to run
+3. Test hotkey → popup → save
+4. If issues: copy logs → fix
 
-## GitHub workflow
+## Debugging
+Enable debug mode in settings to log:
+- GraphQL operation and variables (safely redacted)
+- HTTP status
+- Response body (truncated)
+- Save path (`api_success`, `api_failed_fallback_offered`, `fallback_used`)
 
-The repository already has an `origin` remote configured. A good next-step flow is:
-
-```bash
-git push -u origin <branch-name>
-```
-
-Then open a pull request from that branch on GitHub when you want review or a mergeable checkpoint.
-
-## Next step for you
-
-Please provide details requested in `docs/API_INFO_REQUEST.md`.
+## Notes
+- GraphQL playground uses production data—be careful testing
+- OAuth is intentionally out of scope for MVP
