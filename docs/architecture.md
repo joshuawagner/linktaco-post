@@ -70,10 +70,10 @@ Hotkey → ChromeClient → AppState → PopupView → BookmarkSaver → API or 
 5. If fallback is selected, open fallback URL and keep app responsive.
 
 ## Selected Text Capture Policy
-- Attempt selected text capture only if it is fast and reliable in current session.
-- Cap selected text attempt at **300 ms**.
-- Never block popup display waiting for selected text.
-- If unavailable, set description to blank.
+- Attempt selected text capture only when it is obtainable with current permissions and expected low latency.
+- Use a hard timeout of **300 ms** for any selected text capture attempt.
+- Never block popup display on selected text capture.
+- Default description to empty when selected text is unavailable.
 
 ## Organization Lifecycle
 - Fetch organizations after token save and on explicit refresh.

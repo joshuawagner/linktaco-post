@@ -12,7 +12,10 @@
 ## Browser
 - Chrome only (MVP)
 - Canonical shortcut is `cmd+shift+option+h`
-- Selected text capture is best-effort and non-blocking
+- Selected text capture is attempted only when obtainable with current permissions and expected low latency
+- Selected text capture attempt has a hard timeout of 300 ms
+- Popup display must never block on selected text capture
+- Description defaults to empty when selected text is unavailable
 
 ## UX
 - Popup before save
