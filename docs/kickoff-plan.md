@@ -1,5 +1,7 @@
 # Kickoff Plan: Move Project from "initialized" to "in progress"
 
+Historical note: this early kickoff plan predates the current macOS quick-save direction. Treat it as archival context only. Use [`docs/roadmap.md`](./roadmap.md), [`docs/decisions.md`](./decisions.md), and [`NEXT_STEPS.md`](../NEXT_STEPS.md) for the active plan.
+
 ## MVP Scope (2-week target)
 
 ### Goal

@@ -1,16 +1,22 @@
 # LinkTacoQuickSave
 
-A macOS utility to quickly save bookmarks to LinkTaco using a global hotkey.
+A macOS SwiftUI prototype for quickly capturing the active Chrome tab and preparing a LinkTaco bookmark save.
 
-## Features (MVP)
-- Global hotkey: ⌘⇧⌥H (Command+Shift+Option+H)
-- Capture active Chrome tab (URL + title)
-- Optional selected-text capture (best effort)
-- Popup editor before save
-- Edit URL, title, description, tags
-- Select organization (default + per-save override)
-- Background save via LinkTaco GraphQL API
-- Browser fallback (`/add`) if API fails or token is unavailable
+## Current Prototype
+- Global hotkey: `⌘⇧⌥H` (`Command+Shift+Option+H`)
+- Captures the active Chrome tab URL and title
+- Prefills the popup with captured data
+- Lets you edit URL, title, description, and tags before saving
+- Opens a browser fallback (`/add`) when save is unavailable or fails
+- Includes a simple in-app search screen backed by either configured API access or local placeholder results
+
+## What Is Not Implemented Yet
+- PAT settings UI
+- Keychain token storage
+- Organization picker
+- GraphQL save flow
+- Debug mode toggle
+- Reliable selected-text capture
 
 ## Setup
 
@@ -27,22 +33,24 @@ Grant:
 - Accessibility (global hotkey)
 - Automation (Chrome tab access)
 
-### 4. Configure Token
-- Generate a Personal Access Token (PAT) from LinkTaco
-- Required scopes:
-  - LINKS:RW
-  - ORGS:RO
-- Paste token into app settings (stored in Keychain)
+### 4. Optional Environment Configuration
+The current prototype reads API settings from environment variables when they are present:
+
+- `LINKTACO_CREATE_ENDPOINT`
+- `LINKTACO_SEARCH_ENDPOINT`
+- `LINKTACO_BEARER_TOKEN`
+
+If these are not set, the app still runs, but save/search behavior falls back to local placeholder behavior where available.
 
 ### 5. First Run
-- App fetches organizations after PAT is saved
-- Select default organization
-- Save popup always allows org override
+- Open the app and use the hotkey in Chrome to capture the current tab
+- Review or edit the popup fields before saving
+- If API access is not configured, the app opens the browser fallback path
 
 ## Save Behavior
-- API save is primary path
-- Save is considered failed on transport error, timeout, GraphQL `errors`, or missing `data.addLink`
-- On failure, app surfaces inline error and offers browser fallback
+- Save currently uses the app's configured endpoint if one is provided
+- If save cannot proceed, the app opens the browser fallback path
+- The prototype does not yet implement the full LinkTaco GraphQL contract described in `docs/linktaco-api.md`
 
 ## Development Loop
 1. Modify code
@@ -50,17 +58,18 @@ Grant:
 3. Test hotkey → popup → save
 4. If issues: copy logs → fix
 
-## Debugging
-Enable debug mode in settings for API save-path diagnostics, and follow the
-**Debug Logging Safety** policy in
-[`docs/linktaco-api.md`](docs/linktaco-api.md#debug-logging-safety).
+## Search
+- The app includes a search tab in the window
+- When search API settings are not provided, it shows local placeholder results
+- Search is a prototype surface and not yet the final LinkTaco bookmark search experience
 
-When debug logging is enabled:
-- GraphQL operation and variables may be logged only with sensitive values redacted
-- HTTP status may be logged
-- Response bodies must be truncated/capped
-- Save path should be logged (`api_success`, `api_failed_fallback_offered`, `fallback_used`)
+## Debugging
+- There is no debug toggle UI yet
+- If you add logging, follow the **Debug Logging Safety** policy in
+  [`docs/linktaco-api.md`](docs/linktaco-api.md#debug-logging-safety)
 
 ## Notes
-- GraphQL playground uses production data—be careful testing
-- OAuth is intentionally out of scope for MVP
+- The long-term target remains the LinkTaco GraphQL/PAT workflow described in `docs/decisions.md`
+- OAuth is intentionally out of scope for the MVP
+- The prototype is intentionally lightweight while the API and save flow are still being wired up
+- Search is currently exposed as a prototype screen even though the planned bookmark search feature is still future work

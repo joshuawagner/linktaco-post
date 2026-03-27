@@ -1,5 +1,7 @@
 # LinkTaco API Information Request
 
+Historical note: this request document predates the current API contract. Use [`docs/linktaco-api.md`](./linktaco-api.md) as the active source of truth.
+
 To complete polished background-saving support (without opening a visible browser tab), please provide the following:
 
 1. **Create bookmark endpoint**
@@ -44,4 +46,3 @@ To complete polished background-saving support (without opening a visible browse
 - Postman collection or OpenAPI spec
 - Official docs link
 - A curl example for create bookmark and search
-

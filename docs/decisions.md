@@ -52,3 +52,4 @@
 
 ## Documentation
 - 2026-03-27: Expanded `docs/architecture.md` interface contracts to include method signatures, model I/O expectations, explicit error surfaces, and a protocol-to-concrete implementation mapping table.
+- 2026-03-27: Reconciled `README.md`, `docs/architecture.md`, and `NEXT_STEPS.md` so they describe the current prototype honestly while preserving the agreed MVP target.
