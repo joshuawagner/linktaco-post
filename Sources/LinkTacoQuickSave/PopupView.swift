@@ -64,9 +64,16 @@ struct PopupView: View {
             }
 
             if !appState.statusMessage.isEmpty {
-                Text(appState.statusMessage)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    if appState.isSaving {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+
+                    Text(appState.statusMessage)
+                        .font(.footnote)
+                        .foregroundStyle(statusColor)
+                }
             }
 
             if appState.isShowingBrowserFallbackOption {
@@ -84,6 +91,12 @@ struct PopupView: View {
                 Button("Save") {
                     appState.save()
                 }
+                .overlay {
+                    if appState.isSaving {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                }
                 .disabled(!appState.canSaveDraft)
                 .keyboardShortcut(.defaultAction)
             }
@@ -99,6 +112,19 @@ struct PopupView: View {
             if appState.isDebugLoggingEnabled {
                 AppLogger.logger.debug("popup_disappeared id=\(appState.activeCaptureID, privacy: .public)")
             }
+        }
+    }
+
+    private var statusColor: Color {
+        switch appState.statusTone {
+        case .neutral:
+            return .secondary
+        case .success:
+            return .green
+        case .warning:
+            return .orange
+        case .error:
+            return .red
         }
     }
 }

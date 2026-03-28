@@ -5,6 +5,13 @@ import SwiftUI
 
 @MainActor
 final class AppState: ObservableObject {
+    enum StatusTone {
+        case neutral
+        case success
+        case warning
+        case error
+    }
+
     @Published var draft = DraftBookmark(url: "", title: "", description: "", tags: "")
     @Published var searchQuery = ""
     @Published var searchResults: [BookmarkSearchResult] = []
@@ -21,8 +28,10 @@ final class AppState: ObservableObject {
     @Published var isSaving = false
     @Published var isShowingBrowserFallbackOption = false
     @Published var statusMessage = ""
+    @Published var statusTone: StatusTone = .neutral
     @Published var searchStatusMessage = ""
     @Published var configurationStatusMessage = ""
+    @Published var configurationStatusTone: StatusTone = .neutral
     @Published private(set) var activeCaptureID = UUID().uuidString
 
     private let config = AppConfig.loadFromEnvironment()
@@ -49,15 +58,18 @@ final class AppState: ObservableObject {
             savedBearerToken = config.bearerToken?.trimmedForAppUse ?? ""
             tokenInput = savedBearerToken
             configurationStatusMessage = "Could not read the saved PAT from Keychain."
+            configurationStatusTone = .warning
         }
 
         if let cachedOrganizations = loadCachedOrganizationsIfFresh() {
             applyOrganizations(cachedOrganizations)
             if configurationStatusMessage.isEmpty {
                 configurationStatusMessage = "Loaded organizations from the local cache."
+                configurationStatusTone = .neutral
             }
         } else if savedBearerToken.isEmpty {
             configurationStatusMessage = "Save a PAT to Keychain to load organizations."
+            configurationStatusTone = .neutral
         }
 
         if !savedBearerToken.isEmpty && organizations.isEmpty {
@@ -139,14 +151,14 @@ final class AppState: ObservableObject {
                 description: tab.selectedText,
                 tags: ""
             )
-            statusMessage = ""
+            setStatus("", tone: .neutral)
             isPopupVisible = true
             logDebug(
                 "capture_succeeded id=\(activeCaptureID) titleLength=\(draft.title.count) descriptionLength=\(draft.description.count)"
             )
             presentAppWindow()
         } catch {
-            statusMessage = "Could not read active Chrome tab: \(error.localizedDescription)"
+            setStatus("Could not read active Chrome tab: \(error.localizedDescription)", tone: .warning)
             isPopupVisible = true
             logDebug(
                 "capture_failed id=\(activeCaptureID) error=\(String(describing: error))"
@@ -171,6 +183,7 @@ final class AppState: ObservableObject {
                     organizations = []
                     clearCachedOrganizations()
                     configurationStatusMessage = "Cleared the saved PAT."
+                    configurationStatusTone = .neutral
                     return
                 }
 
@@ -178,9 +191,11 @@ final class AppState: ObservableObject {
                 savedBearerToken = trimmedToken
                 tokenInput = trimmedToken
                 configurationStatusMessage = "Saved PAT to Keychain."
+                configurationStatusTone = .success
                 await refreshOrganizations(force: true)
             } catch {
                 configurationStatusMessage = "Could not save the PAT to Keychain: \(error.localizedDescription)"
+                configurationStatusTone = .error
             }
         }
     }
@@ -203,49 +218,57 @@ final class AppState: ObservableObject {
 
         guard !slug.isEmpty else {
             configurationStatusMessage = "Select an active organization before the GraphQL save path is enabled."
+            configurationStatusTone = .warning
             return
         }
 
         if let organization = activeOrganizations.first(where: { $0.slug == slug }) {
             configurationStatusMessage = "Selected organization: \(organization.name)."
+            configurationStatusTone = .success
         } else {
             selectedOrganizationSlug = ""
             configurationStatusMessage = "Choose an active organization from the list."
+            configurationStatusTone = .warning
         }
     }
 
     func save() {
+        let saveAttemptID = UUID().uuidString
         logDebug(
-            "save_tapped id=\(activeCaptureID) popupVisible=\(isPopupVisible) hasOrgSelection=\(!selectedOrganizationSlug.isEmpty)"
+            "save_tapped captureID=\(activeCaptureID) attemptID=\(saveAttemptID) popupVisible=\(isPopupVisible) hasOrgSelection=\(!selectedOrganizationSlug.isEmpty)"
         )
 
         Task { @MainActor in
             isShowingBrowserFallbackOption = false
 
             guard !draft.url.trimmedForAppUse.isEmpty, !draft.title.trimmedForAppUse.isEmpty else {
-                statusMessage = "URL and title are required before saving."
+                setStatus("URL and title are required before saving.", tone: .warning)
                 return
             }
 
             if hasSavedPAT, isOrganizationCacheStale {
-                statusMessage = "Refreshing organizations before saving..."
+                setStatus("Refreshing organizations before saving...", tone: .neutral)
                 await refreshOrganizations(force: true)
             }
 
             guard hasValidActiveOrganizationSelection else {
-                statusMessage = activeOrganizations.isEmpty
-                    ? "No active organizations are available yet. Refresh or verify account access."
-                    : "Choose a valid active organization before saving."
+                setStatus(
+                    activeOrganizations.isEmpty
+                        ? "No active organizations are available yet. Refresh or verify account access."
+                        : "Choose a valid active organization before saving.",
+                    tone: .warning
+                )
                 return
             }
 
             guard !savedBearerToken.isEmpty else {
-                statusMessage = "No saved PAT is available. Open the browser fallback instead."
+                setStatus("No saved PAT is available. Open the browser fallback instead.", tone: .warning)
                 isShowingBrowserFallbackOption = true
                 return
             }
 
             isSaving = true
+            setStatus("Saving bookmark to LinkTaco...", tone: .neutral)
             defer { isSaving = false }
 
             do {
@@ -256,23 +279,23 @@ final class AppState: ObservableObject {
                 )
                 switch result {
                 case .success:
-                    statusMessage = "Saved to LinkTaco."
+                    setStatus("Saved to LinkTaco.", tone: .success)
                     isPopupVisible = false
                     logDebug(
-                        "save_completed id=\(activeCaptureID) path=api_success popupVisible=\(isPopupVisible)"
+                        "save_completed captureID=\(activeCaptureID) attemptID=\(saveAttemptID) path=api_success popupVisible=\(isPopupVisible)"
                     )
                 case .fallbackRequired(let reason):
-                    statusMessage = "\(reason). Open the browser fallback below."
+                    setStatus("\(reason). Open the browser fallback below.", tone: .warning)
                     isShowingBrowserFallbackOption = true
                     logDebug(
-                        "save_completed id=\(activeCaptureID) path=api_failed_fallback_offered popupVisible=\(isPopupVisible)"
+                        "save_completed captureID=\(activeCaptureID) attemptID=\(saveAttemptID) path=api_failed_fallback_offered popupVisible=\(isPopupVisible)"
                     )
                 }
             } catch {
-                statusMessage = "Save failed: \(error.localizedDescription). Open the browser fallback below."
+                setStatus("Save failed: \(error.localizedDescription). Open the browser fallback below.", tone: .error)
                 isShowingBrowserFallbackOption = true
                 logDebug(
-                    "save_completed id=\(activeCaptureID) path=api_failed_fallback_offered popupVisible=\(isPopupVisible)"
+                    "save_completed captureID=\(activeCaptureID) attemptID=\(saveAttemptID) path=api_failed_fallback_offered popupVisible=\(isPopupVisible)"
                 )
             }
         }
@@ -282,7 +305,7 @@ final class AppState: ObservableObject {
         BookmarkSaver.openBrowserFallback(draft, orgSlug: selectedOrganizationSlug)
         isShowingBrowserFallbackOption = false
         isPopupVisible = false
-        statusMessage = "Opened browser fallback."
+        setStatus("Opened browser fallback.", tone: .neutral)
     }
 
     func runSearch() {
@@ -336,43 +359,58 @@ final class AppState: ObservableObject {
             organizations = []
             clearCachedOrganizations()
             configurationStatusMessage = "Save a PAT to Keychain to load organizations."
+            configurationStatusTone = .neutral
             return
         }
 
         if !force, let cachedOrganizations = loadCachedOrganizationsIfFresh() {
             applyOrganizations(cachedOrganizations)
             configurationStatusMessage = "Loaded organizations from the local cache."
+            configurationStatusTone = .neutral
             return
         }
 
         isRefreshingOrganizations = true
         defer { isRefreshingOrganizations = false }
+        let refreshAttemptID = UUID().uuidString
+        logDebug("org_refresh_started attemptID=\(refreshAttemptID) force=\(force) cachedCount=\(organizations.count)")
 
         do {
             let fetchedOrganizations = try await organizationService.fetchOrganizations(
                 token: savedBearerToken,
-                endpoint: config.graphqlEndpoint
+                endpoint: config.graphqlEndpoint,
+                debugLoggingEnabled: config.debugLoggingEnabled,
+                correlationID: refreshAttemptID
             )
             applyOrganizations(fetchedOrganizations)
             persistOrganizationsCache(fetchedOrganizations)
 
             if organizations.isEmpty {
                 configurationStatusMessage = "Organization refresh succeeded, but the API returned 0 organizations."
+                configurationStatusTone = .warning
             } else if activeOrganizations.isEmpty {
                 configurationStatusMessage = "Loaded \(organizations.count) organization\(organizations.count == 1 ? "" : "s"), but none are active for this PAT."
+                configurationStatusTone = .warning
             } else if selectedOrganizationSlug.isEmpty {
                 configurationStatusMessage = "Loaded \(activeOrganizations.count) active organization\(activeOrganizations.count == 1 ? "" : "s"). Choose one to continue."
+                configurationStatusTone = .success
             } else if let selectedOrganization {
                 configurationStatusMessage = "Organizations refreshed. Using \(selectedOrganization.name). Loaded \(activeOrganizations.count) active organization\(activeOrganizations.count == 1 ? "" : "s")."
+                configurationStatusTone = .success
             }
+            logDebug("org_refresh_completed attemptID=\(refreshAttemptID) total=\(organizations.count) active=\(activeOrganizations.count)")
         } catch {
             if organizations.isEmpty, let cachedOrganizations = loadCachedOrganizationsIfFresh() {
                 applyOrganizations(cachedOrganizations)
                 configurationStatusMessage = "Could not refresh organizations: \(error.localizedDescription). Using cached data for now."
+                configurationStatusTone = .warning
+                logDebug("org_refresh_failed attemptID=\(refreshAttemptID) cachedFallback=true error=\(error.localizedDescription)")
                 return
             }
 
             configurationStatusMessage = "Could not refresh organizations: \(error.localizedDescription)"
+            configurationStatusTone = .error
+            logDebug("org_refresh_failed attemptID=\(refreshAttemptID) cachedFallback=false error=\(error.localizedDescription)")
         }
     }
 
@@ -390,6 +428,7 @@ final class AppState: ObservableObject {
             configurationStatusMessage = activeOrganizations.isEmpty
                 ? "No active organizations are available yet."
                 : "Your saved organization is no longer valid. Choose another active organization."
+            configurationStatusTone = .warning
         }
     }
 
@@ -450,5 +489,10 @@ final class AppState: ObservableObject {
         }
 
         AppLogger.logger.debug("\(message, privacy: .public)")
+    }
+
+    private func setStatus(_ message: String, tone: StatusTone) {
+        statusMessage = message
+        statusTone = tone
     }
 }
