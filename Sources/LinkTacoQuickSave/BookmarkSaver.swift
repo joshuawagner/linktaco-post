@@ -57,17 +57,18 @@ enum BookmarkSaver {
     """
 
     static func save(_ draft: DraftBookmark, config: AppConfig) async throws -> SaveResult {
-        return try await saveInternal(draft, context: nil, config: config)
+        return try await saveInternal(draft, context: nil, config: config, correlationID: UUID().uuidString)
     }
 
     static func save(_ draft: DraftBookmark, context: BookmarkSaveContext, config: AppConfig) async throws -> SaveResult {
-        return try await saveInternal(draft, context: context, config: config)
+        return try await saveInternal(draft, context: context, config: config, correlationID: UUID().uuidString)
     }
 
     private static func saveInternal(
         _ draft: DraftBookmark,
         context: BookmarkSaveContext?,
-        config: AppConfig
+        config: AppConfig,
+        correlationID: String
     ) async throws -> SaveResult {
         guard let token = config.bearerToken?.trimmedForAppUse,
               !token.isEmpty
@@ -84,28 +85,35 @@ enum BookmarkSaver {
         request.timeoutInterval = 3
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(
-            GraphQLRequest(
-                query: Self.addLinkOperation,
-                variables: AddLinkVariables(
-                    input: AddLinkInput(
-                        url: draft.url.trimmedForAppUse,
-                        title: draft.title.trimmedForAppUse,
-                        description: draft.description.trimmedForAppUse.emptyStringAsNil,
-                        tags: normalizedTags(from: draft.tags).emptyStringAsNil,
-                        orgSlug: orgSlug,
-                        unread: false,
-                        starred: false,
-                        archive: false
-                    )
+        let requestBody = GraphQLRequest(
+            query: Self.addLinkOperation,
+            variables: AddLinkVariables(
+                input: AddLinkInput(
+                    url: draft.url.trimmedForAppUse,
+                    title: draft.title.trimmedForAppUse,
+                    description: draft.description.trimmedForAppUse.emptyStringAsNil,
+                    tags: normalizedTags(from: draft.tags).emptyStringAsNil,
+                    orgSlug: orgSlug,
+                    unread: false,
+                    starred: false,
+                    archive: false
                 )
             )
+        )
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        logDebug(
+            enabled: config.debugLoggingEnabled,
+            message: "save_request_started correlationID=\(correlationID) urlLength=\(requestBody.variables.input.url.count) titleLength=\(requestBody.variables.input.title.count) hasDescription=\(requestBody.variables.input.description != nil) hasTags=\(requestBody.variables.input.tags != nil) orgSlugLength=\(orgSlug.count)"
         )
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw BookmarkSaverError.invalidHTTPResponse
         }
+        logDebug(
+            enabled: config.debugLoggingEnabled,
+            message: "save_response_received correlationID=\(correlationID) status=\(http.statusCode) bytes=\(data.count)"
+        )
 
         if http.statusCode == 401 || http.statusCode == 403 {
             throw BookmarkSaverError.unauthorized
@@ -123,12 +131,18 @@ enum BookmarkSaver {
         }
 
         if let message = decodedResponse.errors?.first?.message, !message.isEmpty {
+            logDebug(
+                enabled: config.debugLoggingEnabled,
+                message: "save_response_graphql_error correlationID=\(correlationID) message=\(message)"
+            )
             throw BookmarkSaverError.graphql(message)
         }
 
         guard decodedResponse.data?.addLink != nil else {
             throw BookmarkSaverError.missingData
         }
+
+        logDebug(enabled: config.debugLoggingEnabled, message: "save_request_succeeded correlationID=\(correlationID)")
 
         return .success
     }
@@ -185,6 +199,14 @@ enum BookmarkSaver {
     private static func codingPathDescription(_ codingPath: [CodingKey]) -> String {
         let path = codingPath.map(\.stringValue).joined(separator: ".")
         return path.isEmpty ? "<root>" : path
+    }
+
+    private static func logDebug(enabled: Bool, message: String) {
+        guard enabled else {
+            return
+        }
+
+        AppLogger.logger.debug("\(message, privacy: .public)")
     }
 }
 

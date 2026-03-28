@@ -48,6 +48,10 @@
 - 2026-03-27: Added opt-in popup lifecycle diagnostics behind `LINKTACO_DEBUG_LOGS=1` to trace capture, popup presentation, description editing, org selection, and save/fallback flow without logging PATs or raw bookmark contents
 - 2026-03-27: Replaced the popup description `TextEditor` with an AppKit-backed `NSTextView` wrapper as an experiment after correlating `TUINSRemoteViewController` faults with description-field focus teardown
 - 2026-03-27: Replaced popup URL, title, and tags `TextField`s with AppKit-backed `NSTextField` wrappers after remaining `TUINSRemoteViewController` faults appeared during field-to-field focus transitions
+- 2026-03-27: Added opt-in GraphQL save/organization refresh debug logs that record only correlation IDs, request/response metadata, status codes, counts, and server error messages, without logging PATs or raw bookmark contents
+
+## Save UX
+- 2026-03-27: Save status messaging now uses success/warning/error tones and shows an in-popup saving state while the GraphQL request is in flight.
 
 ## Assumptions
 - 2026-03-27: The save path is expected to use the documented GraphQL `addLink` mutation with the saved PAT and selected active org; browser fallback remains an explicit user action when save fails.

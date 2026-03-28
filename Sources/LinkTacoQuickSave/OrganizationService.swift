@@ -38,23 +38,27 @@ final class OrganizationService {
     }
     """
 
-    func fetchOrganizations(token: String, endpoint: URL) async throws -> [Organization] {
+    func fetchOrganizations(token: String, endpoint: URL, debugLoggingEnabled: Bool = false, correlationID: String = UUID().uuidString) async throws -> [Organization] {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.timeoutInterval = 3
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder().encode(
-            GraphQLRequest(
-                query: Self.getOrganizationsOperation,
-                variables: Variables(input: EmptyInput())
-            )
+        let requestBody = GraphQLRequest(
+            query: Self.getOrganizationsOperation,
+            variables: Variables(input: EmptyInput())
         )
+        request.httpBody = try JSONEncoder().encode(requestBody)
+        logDebug(enabled: debugLoggingEnabled, message: "org_request_started correlationID=\(correlationID)")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OrganizationServiceError.invalidHTTPResponse
         }
+        logDebug(
+            enabled: debugLoggingEnabled,
+            message: "org_response_received correlationID=\(correlationID) status=\(httpResponse.statusCode) bytes=\(data.count)"
+        )
 
         if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
             throw OrganizationServiceError.unauthorized
@@ -72,12 +76,22 @@ final class OrganizationService {
         }
 
         if let message = decodedResponse.errors?.first?.message, !message.isEmpty {
+            logDebug(
+                enabled: debugLoggingEnabled,
+                message: "org_response_graphql_error correlationID=\(correlationID) message=\(message)"
+            )
             throw OrganizationServiceError.graphql(message)
         }
 
         guard let organizations = decodedResponse.data?.getOrganizations else {
             throw OrganizationServiceError.missingData
         }
+
+        let activeCount = organizations.filter(\.isActive).count
+        logDebug(
+            enabled: debugLoggingEnabled,
+            message: "org_request_succeeded correlationID=\(correlationID) count=\(organizations.count) active=\(activeCount)"
+        )
 
         return organizations
     }
@@ -100,6 +114,14 @@ final class OrganizationService {
     private func codingPathDescription(_ codingPath: [CodingKey]) -> String {
         let path = codingPath.map(\.stringValue).joined(separator: ".")
         return path.isEmpty ? "<root>" : path
+    }
+
+    private func logDebug(enabled: Bool, message: String) {
+        guard enabled else {
+            return
+        }
+
+        AppLogger.logger.debug("\(message, privacy: .public)")
     }
 }
 
