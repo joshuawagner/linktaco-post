@@ -69,6 +69,13 @@ struct PopupView: View {
                     .foregroundStyle(.secondary)
             }
 
+            if appState.isShowingBrowserFallbackOption {
+                Button("Open in Browser Instead") {
+                    appState.openBrowserFallback()
+                }
+                .font(.footnote)
+            }
+
             HStack {
                 Spacer()
                 Button("Cancel") {
@@ -77,6 +84,7 @@ struct PopupView: View {
                 Button("Save") {
                     appState.save()
                 }
+                .disabled(!appState.canSaveDraft)
                 .keyboardShortcut(.defaultAction)
             }
         }

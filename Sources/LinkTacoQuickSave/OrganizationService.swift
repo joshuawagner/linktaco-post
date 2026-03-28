@@ -6,6 +6,7 @@ enum OrganizationServiceError: LocalizedError {
     case serverStatus(Int)
     case graphql(String)
     case missingData
+    case decoding(String)
 
     var errorDescription: String? {
         switch self {
@@ -19,6 +20,8 @@ enum OrganizationServiceError: LocalizedError {
             return message
         case .missingData:
             return "The organization response did not include any organization data."
+        case .decoding(let details):
+            return "The organization response could not be decoded: \(details)"
         }
     }
 }
@@ -61,7 +64,12 @@ final class OrganizationService {
             throw OrganizationServiceError.serverStatus(httpResponse.statusCode)
         }
 
-        let decodedResponse = try JSONDecoder().decode(GraphQLResponse.self, from: data)
+        let decodedResponse: GraphQLResponse
+        do {
+            decodedResponse = try JSONDecoder().decode(GraphQLResponse.self, from: data)
+        } catch let decodingError as DecodingError {
+            throw OrganizationServiceError.decoding(describe(decodingError))
+        }
 
         if let message = decodedResponse.errors?.first?.message, !message.isEmpty {
             throw OrganizationServiceError.graphql(message)
@@ -72,6 +80,26 @@ final class OrganizationService {
         }
 
         return organizations
+    }
+
+    private func describe(_ error: DecodingError) -> String {
+        switch error {
+        case .keyNotFound(let key, let context):
+            return "Missing key '\(key.stringValue)' at \(codingPathDescription(context.codingPath))."
+        case .typeMismatch(_, let context):
+            return "Type mismatch at \(codingPathDescription(context.codingPath)): \(context.debugDescription)"
+        case .valueNotFound(_, let context):
+            return "Missing value at \(codingPathDescription(context.codingPath)): \(context.debugDescription)"
+        case .dataCorrupted(let context):
+            return "Data corrupted at \(codingPathDescription(context.codingPath)): \(context.debugDescription)"
+        @unknown default:
+            return "Unknown decoding error."
+        }
+    }
+
+    private func codingPathDescription(_ codingPath: [CodingKey]) -> String {
+        let path = codingPath.map(\.stringValue).joined(separator: ".")
+        return path.isEmpty ? "<root>" : path
     }
 }
 

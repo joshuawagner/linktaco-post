@@ -13,10 +13,8 @@ A macOS SwiftUI prototype for quickly capturing the active Chrome tab and prepar
 - Includes a simple in-app search screen backed by either configured API access or local placeholder results
 
 ## What Is Not Implemented Yet
-- GraphQL save flow
 - Debug mode toggle
 - Reliable selected-text capture
-- Final save gating and inline-error UX for org-aware GraphQL saves
 
 ## Setup
 
@@ -36,24 +34,23 @@ Grant:
 ### 4. Optional Environment Configuration
 The current prototype reads API settings from environment variables when they are present:
 
-- `LINKTACO_CREATE_ENDPOINT`
 - `LINKTACO_SEARCH_ENDPOINT`
 - `LINKTACO_BEARER_TOKEN`
 
-If these are not set, the app still runs, but save/search behavior falls back to local placeholder behavior where available. `LINKTACO_BEARER_TOKEN` can also seed the initial token field when no Keychain PAT has been saved yet.
+If these are not set, the app still runs, but search behavior falls back to local placeholder behavior where available. `LINKTACO_BEARER_TOKEN` can also seed the initial token field when no Keychain PAT has been saved yet.
 
 ### 5. First Run
+- Create or manage your PAT at `https://linktaco.com/oauth2/personal`
 - Open the app and use the hotkey in Chrome to capture the current tab
 - Save a PAT and refresh organizations
 - Choose an active organization in the main view or popup
 - Review or edit the popup fields before saving
-- If API access is not configured, the app opens the browser fallback path
+- If save cannot proceed, the app offers the browser fallback path
 
 ## Save Behavior
-- Save currently uses the app's configured endpoint if one is provided
-- The PAT and selected org foundation are in place, but the prototype save path does not yet send the final GraphQL `addLink` request
-- If save cannot proceed, the app opens the browser fallback path
-- The prototype does not yet implement the full LinkTaco GraphQL contract described in `docs/linktaco-api.md`
+- Save uses the LinkTaco GraphQL `addLink` mutation with the saved PAT and selected org
+- Save blocks when the selected org is missing, invalid, or inactive
+- If save cannot proceed because the PAT is missing or the API returns an error, the app offers the browser fallback path
 
 ## Development Loop
 1. Modify code

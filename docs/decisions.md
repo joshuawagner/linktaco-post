@@ -50,7 +50,8 @@
 - 2026-03-27: Replaced popup URL, title, and tags `TextField`s with AppKit-backed `NSTextField` wrappers after remaining `TUINSRemoteViewController` faults appeared during field-to-field focus transitions
 
 ## Assumptions
-- 2026-03-27: PAT storage and organization-selection foundation may land before the GraphQL save path. Until `addLink` is implemented, the prototype save flow may continue using the configured prototype endpoint/browser fallback and does not yet require or transmit the selected org.
+- 2026-03-27: The save path is expected to use the documented GraphQL `addLink` mutation with the saved PAT and selected active org; browser fallback remains an explicit user action when save fails.
+- 2026-03-27: The in-app PAT settings copy points users to `https://linktaco.com/oauth2/personal` for PAT management.
 
 ## Future
 - Search feature planned
@@ -61,3 +62,5 @@
 - 2026-03-27: Reconciled `README.md`, `docs/architecture.md`, and `NEXT_STEPS.md` so they describe the current prototype honestly while preserving the agreed MVP target.
 - 2026-03-27: Updated docs after implementing the PAT, Keychain, and organization-selection foundation in the current prototype.
 - 2026-03-27: Aligned the browser fallback URL builder with the documented `/add` contract by forwarding normalized `tags` and the selected `org` slug from the popup save flow.
+- 2026-03-27: Added the LinkTaco PAT management URL (`https://linktaco.com/oauth2/personal`) to the in-app PAT settings copy and setup documentation.
+- 2026-03-27: Improved org-refresh UI messaging so the app distinguishes request failures, zero returned organizations, and non-empty but fully inactive organization lists.

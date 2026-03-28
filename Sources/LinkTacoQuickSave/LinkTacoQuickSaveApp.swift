@@ -79,6 +79,14 @@ private struct QuickSaveHomeView: View {
                         SecureField("Personal Access Token", text: $appState.tokenInput)
                             .textFieldStyle(.roundedBorder)
 
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("linktaco.com/oauth2/personal")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                            Link("https://linktaco.com/oauth2/personal", destination: URL(string: "https://linktaco.com/oauth2/personal")!)
+                                .font(.footnote)
+                        }
+
                         HStack(spacing: 10) {
                             Button("Save PAT") {
                                 appState.savePAT()
