@@ -34,11 +34,10 @@ Grant:
 ### 4. Optional Environment Configuration
 The current prototype reads API settings from environment variables when they are present:
 
-- `LINKTACO_CREATE_ENDPOINT`
 - `LINKTACO_SEARCH_ENDPOINT`
 - `LINKTACO_BEARER_TOKEN`
 
-If these are not set, the app still runs, but save/search behavior falls back to local placeholder behavior where available. `LINKTACO_BEARER_TOKEN` can also seed the initial token field when no Keychain PAT has been saved yet.
+If these are not set, the app still runs, but search behavior falls back to local placeholder behavior where available. `LINKTACO_BEARER_TOKEN` can also seed the initial token field when no Keychain PAT has been saved yet.
 
 ### 5. First Run
 - Create or manage your PAT at `https://linktaco.com/oauth2/personal`
