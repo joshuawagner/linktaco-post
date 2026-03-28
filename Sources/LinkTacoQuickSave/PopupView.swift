@@ -8,16 +8,38 @@ struct PopupView: View {
             Text("Save to LinkTaco")
                 .font(.headline)
 
-            TextField("URL", text: $appState.draft.url)
-            TextField("Title", text: $appState.draft.title)
+            PopupTextField(
+                text: $appState.draft.url,
+                placeholder: "URL",
+                fieldName: "url",
+                captureID: appState.activeCaptureID,
+                isDebugLoggingEnabled: appState.isDebugLoggingEnabled
+            )
+            PopupTextField(
+                text: $appState.draft.title,
+                placeholder: "Title",
+                fieldName: "title",
+                captureID: appState.activeCaptureID,
+                isDebugLoggingEnabled: appState.isDebugLoggingEnabled
+            )
 
             Text("Description")
                 .font(.subheadline)
-            TextEditor(text: $appState.draft.description)
+            PopupDescriptionTextView(
+                text: $appState.draft.description,
+                captureID: appState.activeCaptureID,
+                isDebugLoggingEnabled: appState.isDebugLoggingEnabled
+            )
                 .frame(height: 100)
                 .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.gray.opacity(0.3)))
 
-            TextField("Tags (comma-separated)", text: $appState.draft.tags)
+            PopupTextField(
+                text: $appState.draft.tags,
+                placeholder: "Tags (comma-separated)",
+                fieldName: "tags",
+                captureID: appState.activeCaptureID,
+                isDebugLoggingEnabled: appState.isDebugLoggingEnabled
+            )
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Organization")
@@ -60,5 +82,15 @@ struct PopupView: View {
         }
         .padding(16)
         .frame(width: 520, height: 420)
+        .onAppear {
+            if appState.isDebugLoggingEnabled {
+                AppLogger.logger.debug("popup_appeared id=\(appState.activeCaptureID, privacy: .public)")
+            }
+        }
+        .onDisappear {
+            if appState.isDebugLoggingEnabled {
+                AppLogger.logger.debug("popup_disappeared id=\(appState.activeCaptureID, privacy: .public)")
+            }
+        }
     }
 }

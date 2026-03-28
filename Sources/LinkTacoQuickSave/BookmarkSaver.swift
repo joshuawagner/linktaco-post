@@ -44,14 +44,30 @@ enum BookmarkSaver {
         return .fallbackRequired("Unexpected status code: \(http.statusCode)")
     }
 
-    static func openBrowserFallback(_ draft: DraftBookmark) {
+    static func openBrowserFallback(_ draft: DraftBookmark, orgSlug: String? = nil) {
         var components = URLComponents(string: "https://linktaco.com/add")
-        components?.queryItems = [
+        var queryItems = [
             URLQueryItem(name: "next", value: "same"),
             URLQueryItem(name: "url", value: draft.url),
             URLQueryItem(name: "description", value: draft.description),
             URLQueryItem(name: "title", value: draft.title)
         ]
+
+        let normalizedTags = draft.tags
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: ",")
+        if !normalizedTags.isEmpty {
+            queryItems.append(URLQueryItem(name: "tags", value: normalizedTags))
+        }
+
+        let normalizedOrgSlug = orgSlug?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !normalizedOrgSlug.isEmpty {
+            queryItems.append(URLQueryItem(name: "org", value: normalizedOrgSlug))
+        }
+
+        components?.queryItems = queryItems
 
         if let url = components?.url {
             NSWorkspace.shared.open(url)
