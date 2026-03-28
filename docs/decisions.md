@@ -61,3 +61,4 @@
 - 2026-03-27: Reconciled `README.md`, `docs/architecture.md`, and `NEXT_STEPS.md` so they describe the current prototype honestly while preserving the agreed MVP target.
 - 2026-03-27: Updated docs after implementing the PAT, Keychain, and organization-selection foundation in the current prototype.
 - 2026-03-27: Aligned the browser fallback URL builder with the documented `/add` contract by forwarding normalized `tags` and the selected `org` slug from the popup save flow.
+- 2026-03-27: Added the LinkTaco PAT management URL (`https://linktaco.com/oauth2/personal`) to the in-app PAT settings copy and setup documentation.

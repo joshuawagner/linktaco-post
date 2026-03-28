@@ -14,6 +14,7 @@ POST https://api.linktaco.com/query
 ## Auth
 - Authorization: Bearer <TOKEN>
 - Use Personal Access Token (PAT)
+- Create/manage PATs at `https://linktaco.com/oauth2/personal`
 - OAuth NOT used for MVP
 - Never log raw token values
 
